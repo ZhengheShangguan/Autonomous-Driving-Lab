@@ -1,0 +1,6 @@
+#to test camera functionality
+raspivid -p 0,0,640,480 -t 0
+
+# 30 hz camera is using 
+roslaunch raspicam_node camerav2_1280x720.launch 
+

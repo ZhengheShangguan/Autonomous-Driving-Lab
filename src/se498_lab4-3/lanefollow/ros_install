@@ -1,0 +1,41 @@
+# if sudo apt-get update returns "... locked ...", restart pi and try again.
+	sudo apt-get update
+	sudo apt-get upgrade
+	$ wget https://raw.githubusercontent.com/ROBOTIS-GIT/robotis_tools/master/install_ros_kinetic_rp3.sh && chmod 755 ./install_ros_kinetic_rp3.sh && bash ./install_ros_kinetic_rp3.sh
+
+# build raspicam_node: https://github.com/UbiquityRobotics/raspicam_node
+	Go to your catkin_ws cd ~/catkin_ws/src.
+
+	Download the source for this node by running
+
+	git clone https://github.com/UbiquityRobotics/raspicam_node.git
+
+	There are some dependencies that are not recognized by ros, so you need to create the file /etc/ros/rosdep/sources.list.d/30-ubiquity.list and add this to it.
+
+	yaml https://raw.githubusercontent.com/UbiquityRobotics/rosdep/master/raspberry-pi.yaml
+	Then run rosdep update.
+
+	Install the ros dependencies,
+
+	cd ~/catkin_ws
+	rosdep install --from-paths src --ignore-src --rosdistro=kinetic -y
+	Compile the code with catkin_make.
+
+# enable camera : https://larrylisky.com/2016/11/24/enabling-raspberry-pi-camera-v2-under-ubuntu-mate/
+Install raspi-config and rpi-update:
+     sudo apt-get install raspi-config rpi-update
+Run raspi-config to enable camera:
+     sudo raspi-config
+Enable camera, finish, and reboot. Next, make sure /boot/config.txt has the following enabled:
+     start_x=1
+     gpu_mem=128
+Now run sudo rpi-update to update firmware. ########
+
+#Running the Node
+	Once you have the node built, you can run it using a launch file.
+
+	For a V2.x camera, run roslaunch raspicam_node camerav2_1280x960.launch
+
+	For a V1.x camera, run roslaunch raspicam_node camerav1_1280x720.launch
+
+	Use rqt_image_view on a connected computer to view the published image.

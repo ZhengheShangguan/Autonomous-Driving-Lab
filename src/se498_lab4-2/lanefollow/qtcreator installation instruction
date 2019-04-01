@@ -1,0 +1,3 @@
+sudo add-apt-repository ppa:levi-armstrong/qt-libraries-xenial
+sudo add-apt-repository ppa:levi-armstrong/ppa
+sudo apt-get update && sudo apt-get install qtcreator qtermwidget59-data libqtermwidget57-0-dev qt57creator-plugin-ros
