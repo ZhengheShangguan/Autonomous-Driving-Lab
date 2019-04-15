@@ -99,9 +99,9 @@ generate_dynamic_reconfigure_options(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
    INCLUDE_DIRS include
-#  LIBRARIES raspicam
-#  CATKIN_DEPENDS compressed_image_transport roscpp std_msgs
-#  DEPENDS system_lib
+   LIBRARIES raspicam
+   CATKIN_DEPENDS compressed_image_transport roscpp std_msgs
+   DEPENDS system_lib
    CATKIN_DEPENDS message_runtime std_msgs
 )
 

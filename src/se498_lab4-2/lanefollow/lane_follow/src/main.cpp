@@ -5,12 +5,13 @@ int main(int ac, char** av)
   ros::init(ac, av, "LaneFollowNode");
   ros::NodeHandle nh;
  // cv::namedWindow("a",cv::WINDOW_AUTOSIZE);// Create a window for display.
-  cv::namedWindow("final",cv::WINDOW_AUTOSIZE);// Create a window for display.
-  cv::namedWindow("perspective",cv::WINDOW_AUTOSIZE);
-  cv::namedWindow("sobel",cv::WINDOW_AUTOSIZE);
-  cv::namedWindow("masked",cv::WINDOW_AUTOSIZE);
-  cv::namedWindow("warp",cv::WINDOW_AUTOSIZE);
+  // cv::namedWindow("final",cv::WINDOW_AUTOSIZE);// Create a window for display.
+  //cv::namedWindow("perspective",cv::WINDOW_AUTOSIZE);
+  // cv::namedWindow("sobel",cv::WINDOW_AUTOSIZE);
+  //cv::namedWindow("masked",cv::WINDOW_AUTOSIZE);
+  //cv::namedWindow("warp",cv::WINDOW_AUTOSIZE);
 
+  //cv::namedWindow("prewarp",cv::WINDOW_AUTOSIZE);
   piCAM::imgProcessor a(nh);
   cv::Mat output;
   ros::Rate r(9);
@@ -30,6 +31,6 @@ int main(int ac, char** av)
    cv::waitKey(5); // for some weird reason this is needed for namedwindow to show.
 
   }
-  cv::destroyAllWindows();
+  //cv::destroyAllWindows();
   return 0;
 }

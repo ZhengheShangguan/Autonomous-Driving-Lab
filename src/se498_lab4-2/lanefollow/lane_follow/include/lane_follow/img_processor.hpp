@@ -1,5 +1,6 @@
 #pragma once
 #include "ros/ros.h"
+#include <geometry_msgs/Twist.h>  //command publish message type // lab4-3: controller command
 #include "sensor_msgs/CompressedImage.h"
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
@@ -30,6 +31,9 @@ public:
 
 protected:
   //variables:
+  // Lab4-3
+  ros::Publisher cmdPub;
+
   ros::Subscriber CamSub;
   CIConstPtr curCpImgPtr;
   cv::Mat perspectiveTransform;

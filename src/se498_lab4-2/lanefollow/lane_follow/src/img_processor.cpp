@@ -14,14 +14,15 @@ namespace piCAM {
 imgProcessor::imgProcessor(ros::NodeHandle &nh)
 {
   getPerspectiveTransform();
-  CamSub = nh.subscribe("usb_cam/image_raw/compressed",10,&imgProcessor::compressedCallback,this);
+  CamSub = nh.subscribe("raspicam_node/image/compressed",10,&imgProcessor::compressedCallback,this);
+  cmdPub = nh.advertise<geometry_msgs::Twist>("/ti/cartCtrl",1);
+
   // pc uses usb_cam package to drive the camera
   // pc topic is : usb_cam/image_raw/compressed
   // raspberry pi camera uses raspicam_node package
   // raspicam_node topic is : raspicam_node/image/compressed
   // initialize the publisher here:
   // remember to declare it in the header file.
-
 }
 
 /*!
@@ -56,17 +57,17 @@ void imgProcessor::getPerspectiveTransform()
   uint col= 308;
 
   //Modify the point positions accordingly. Use variables row and col if needed.
-  ptImg[0] = cv::Point2f(152,142);// in pixel
-  ptWorld[0] = cv::Point2f(152,142);// in centermeter
+  ptImg[0] = cv::Point2f(190,90);// in pixel
+  ptWorld[0] = cv::Point2f(100,0);// in centermeter
 
-  ptImg[1] = cv::Point2f(253,143);// in pixel
-  ptWorld[1] = cv::Point2f(253,143);// in centermeter
+  ptImg[1] = cv::Point2f(290,90);// in pixel
+  ptWorld[1] = cv::Point2f(300,0);// in centermeter
 
-  ptImg[2] = cv::Point2f(298,277);// in pixel
-  ptWorld[2] = cv::Point2f(298,277);// in centermeter
+  ptImg[2] = cv::Point2f(324,308);// in pixel
+  ptWorld[2] = cv::Point2f(300,308);// in centermeter
 
-  ptImg[3] = cv::Point2f(111,273);// in pixel
-  ptWorld[3] = cv::Point2f(111,273);// in centermeter
+  ptImg[3] = cv::Point2f(150,308);// in pixel
+  ptWorld[3] = cv::Point2f(100,308);// in centermeter
 
   perspectiveTransform = cv::getPerspectiveTransform(ptImg,ptWorld);
   invperspectiveTransform = cv::getPerspectiveTransform(ptWorld,ptImg);
@@ -91,7 +92,9 @@ void imgProcessor::getPerspectiveTransform()
 cv::Mat imgProcessor::getHist(const cv::Mat &input){
   cv::Mat sum(1,input.cols,CV_32F); // mat( rows cols type init) this is a 1-D data storage.
   sum = cv::Mat::zeros(sum.size(),CV_32F); // initialize them to zero.
-
+	for (int i=0; i<input.rows; i++) {
+		cv::accumulate(input.row(i), sum);
+	}
   // Implement your code here:
   // you may find cv::accumulate to be useful, google for detail.
 
@@ -136,12 +139,12 @@ imgProcessor::vPoint3f imgProcessor::polyFit(const std::vector<imgProcessor::vPo
     Eigen::MatrixXf A = Eigen::MatrixXf::Zero(i.size(),3);          //column major < type, row, column>
     Eigen::VectorXf b = Eigen::VectorXf::Zero(i.size());
     for(size_t row = 0, rows = A.rows(); row<rows;++row){
-      for(size_t col = 0, cols = A.cols(); col<cols;++col){
+      //for(size_t col = 0, cols = A.cols(); col<cols;++col){
   //! @todo: ADD your code here to populate
         // TO access each point in line, do i[_index_of_the_point_]
         // each i is of type imgProcessor::vPoint which is a vector of points.
-        A(row,col)=0; //place holder, modify accordingly
-      }// end for each row, populate A
+      A.row(row) << i[row].y * i[row].y, i[row].y, 1; //place holder, modify accordingly
+      //}// end for each row, populate A
 
       b(row) = i[row].x; // populate B
     }
@@ -153,7 +156,16 @@ imgProcessor::vPoint3f imgProcessor::polyFit(const std::vector<imgProcessor::vPo
 }
 
 /*!
- * \brief imgProcessor::findCurve
+ * \brief imgProcessor::findCurve INFO] [1552683571.861611374]: using default calibration URL
+[ INFO] [1552683571.861679138]: camera calibration URL: file:///home/ros/.ros/camera_info/head_camera.yaml
+[ INFO] [1552683571.861731540]: Unable to open camera calibration file [/home/ros/.ros/camera_info/head_camera.yaml]
+[ WARN] [1552683571.861757076]: Camera calibration file /home/ros/.ros/camera_info/head_camera.yaml not found.
+[ INFO] [1552683571.861787499]: Starting 'head_camera' (/dev/video0) at 640x480 via mmap (yuyv) at 30 FPS
+[ INFO] [1552683571.937929547]: Using transport "raw"
+[ WARN] [1552683572.185911239]: sh: 1: v4l2-ctl: not found
+
+[ WARN] [1552683572.187577511]: sh: 1: v4l2-ctl: not found
+
  * this function calls a recursive function to find points for each line.
  * It uses sliding window approach.
  * \param input
@@ -170,6 +182,14 @@ imgProcessor::vPoint3f imgProcessor::findCurve(cv::Mat &input){
   std::vector<vPoint> lines; // initialize empty line.
 
   findCurveRecur(input, region, lines, 0); // start looking for line at region with line 0.
+
+	for (auto i:lines) {
+	 std::cout<< "new line" << std::endl;
+		for(size_t row = 0; row<i.size();++row){
+			std::cout<<i[row].x<<" "<<i[row].y<<" "<<std::endl;
+		}
+	}
+
   if( lines.empty()) return lineCoeff;  // if no line detected, return empty coefficient.
   lineCoeff = polyFit(lines);
 
@@ -217,7 +237,7 @@ void imgProcessor::findCurveRecur(const cv::Mat &input, cv::Rect region, std::ve
     // if ma of the histogram is greater than a arbitrary threshold, we consider the current
     // region of interest contains a line segment
     if(max> 250 ){
-      if(line >= (lines.size()) ) // if line is more than size of line.
+      if(line >= (lines.size())) // if line is more than size of line.
       {
         while(line >= lines.size()){
           lines.emplace_back();
@@ -229,20 +249,14 @@ void imgProcessor::findCurveRecur(const cv::Mat &input, cv::Rect region, std::ve
 ///         shifted to the horizontal(x) center of the line segment.
 /// @todo: if no line detecte, shift the region of interest (ROI) horizontally.
 
-//      lines.at(line).push_back(cv::Point(?, ?)); //insert the point to the vector of lines.
+      lines.at(line).push_back(cv::Point(newRegion.x+max_loc.x, newRegion.y+newRegion.height/2)); //insert the point to the vector of lines.
 
-//      findCurveRecur(input,
-//                     region+cv::Point(?,?),
-//                     lines,
-//                     line+1);
+			findCurveRecur(input, region+cv::Point(max_loc.x+winColSize/2,0), lines, line+1);
     }
     else{
-//      findCurveRecur(input,
-//                     region+cv::Point(?,?),
-//                     lines,
-//                     line);
+      findCurveRecur(input, region+cv::Point(winColSize,0), lines, line);
     }
-   }
+  }
 
   if(max> 250 ) // arbitrary value, this means if we see a line, we shift up, regardless.
   {
@@ -258,11 +272,9 @@ void imgProcessor::findCurveRecur(const cv::Mat &input, cv::Rect region, std::ve
 /// @todo: when we do detect a line segment, check next region of interest above it with horizontal(x) region
 ///         shifted to the horizontal(x) center of the line segment.
 
-//    lines.at(line).push_back(cv::Point(?, ?)); //insert the point to the vector of lines.
-//    findCurveRecur(input,
-//                   region+max_loc+cv::Point(?,?), // recenter to max, and shift upward.
-//                   lines,
-//                   line);
+    lines.at(line).push_back(cv::Point(newRegion.x+max_loc.x, newRegion.y+newRegion.height/2)); //insert the point to the vector of lines.//
+    findCurveRecur(input,region+max_loc+cv::Point(-winColSize/2,-winRowSize), lines, line);
+
   }
 }
 
@@ -278,8 +290,9 @@ void imgProcessor::findCurveRecur(const cv::Mat &input, cv::Rect region, std::ve
 bool imgProcessor::roadDectect(cv::Mat &imgBGR)
 {
   // do perspective warp for the img, Need to implement.
+	// cv::imshow("prewarp",imgBGR);
   perspectiveWarp(imgBGR);
-  cv::imshow("warp", imgBGR);
+  // cv::imshow("warp", imgBGR);
 
   cv::Mat mask;
   cv::Mat imgHLS;
@@ -295,12 +308,12 @@ bool imgProcessor::roadDectect(cv::Mat &imgBGR)
   ///@todo: use sobel to find edges using channelsHLS[1], CV_64F, take derivative in x
   /// uncomment the line below and fill in ?
 // cv::Sobel(channelsHLS[1],sobelx,CV_64F,?,?); // take the derivative in x direction
-  cv::Sobel(channelsHLS[1],sobelx,CV_64F,1,1); // this is just a place holder, modify "?"
+  cv::Sobel(channelsHLS[0],sobelx,CV_64F,1,0); // this is just a place holder, modify "?"
   ///@todo: normalized the sobelx data and store in scaled_sobelx
   /// you can use cv::abs() for absolute value
   /// uncomment the line below and fill in ?
 //  cv::normalize(?, scaled_sobelx,?,?,cv::NORM_INF);
-  cv::normalize(sobelx, scaled_sobelx,50,50,cv::NORM_INF); // place holder. NOT the solution
+  cv::normalize(sobelx, scaled_sobelx,255,0,cv::NORM_INF); // place holder. NOT the solution
 
 /// to view min max value of scaled_sobelx, uncomment the code section below
 /*
@@ -311,11 +324,11 @@ bool imgProcessor::roadDectect(cv::Mat &imgBGR)
 
 // display sobel, convert to 8bit.
   cv::convertScaleAbs(scaled_sobelx,scaled_sobelx); // convert from float to 8 bit unsigned.
-  cv::imshow("sobel", scaled_sobelx);
+  // cv::imshow("sobel", scaled_sobelx);
 
 // generate mask for the color selected.
   selectColor(imgHLS,mask,Color::WHITE);  // select color from the img
-  cv::imshow("masked", mask);  // display the mask
+  // cv::imshow("masked", mask);  // display the mask
 
 
 // bitwise and of both masks
@@ -323,11 +336,11 @@ bool imgProcessor::roadDectect(cv::Mat &imgBGR)
 
 // you may want to use gaussian blur to reduce the noise
 //  cv::GaussianBlur(combinedMask,combinedMask,cv::Size(7,7),1);
-  cv::imshow("perspective", combinedMask);// display the mask
+  // cv::imshow("perspective", combinedMask);// display the mask
   vPoint3f lineCoeff = findCurve(combinedMask);
   drawCurve(lineCoeff,imgBGR);
   invPerspectiveWarp(imgBGR);
-  cv::imshow("final",imgBGR);
+  // cv::imshow("final",imgBGR);
   return true;
 }
 
@@ -350,8 +363,8 @@ void imgProcessor::selectColor(cv::Mat &input, cv::Mat &mask, Color code)
   default:
     ROS_WARN("color selection error, default to white.");
   case Color::WHITE:
-//    lower = cv::Vec3b(?,?,?);
-//    upper = cv::Vec3b(?,?,?);
+    lower = cv::Vec3b(150,0,0);
+    upper = cv::Vec3b(180,255,255);
     break;
   case Color::YELLOW:
 //    lower = cv::Vec3b(?,?,?);
@@ -491,6 +504,21 @@ void imgProcessor::drawCurve(const vPoint3f lineCoeffs, cv::Mat &input, size_t t
       }
     }
   }
+
+	// lab4-3: find Middle Curve
+	int midX1 = lineCoeffs[0].x * (rows/2) * (rows/2) + lineCoeffs[0].y * (rows/2) + lineCoeffs[0].z;
+	int midX2 = lineCoeffs[1].x * (rows/2) * (rows/2) + lineCoeffs[1].y * (rows/2) + lineCoeffs[1].z;
+  int midX = (midX1 + midX2) / 2;
+	int diffX = midX - cols / 2;
+
+	float Kp = -0.01;
+  geometry_msgs::Twist cmdMsg;
+	cmdMsg.linear.x = 0.1;
+	cmdMsg.angular.z = fmax(fmin(Kp * diffX, 2), -2); 
+
+  // publish the control
+	std::cout << "cmdMsg.angular: " << cmdMsg.angular.z << std::endl;
+  cmdPub.publish(cmdMsg);
 }
 
 /*!
