@@ -8,7 +8,7 @@ The lab contains:
 3. Autonomous Vehicle wall following with Switch sensor and Infrared sensor;
 4. Image Processing with OpenCV3.3;
 5. Lane detection;
-6. Rviz and Gazebo simulation with task: Let Jackal UGV robot localize itself and pass throught two pillars.
+6. Rviz and Gazebo simulation with task: Let Jackal UGV robot localize itself and pass through two pillars.
 
 Some Demo videos are uploaded on Youtube, please check the followings:
 1. Wall Following with self-assembly robot based on Rasberry Pi: https://www.youtube.com/watch?v=wUAMtk0bIXM 
