@@ -12,5 +12,5 @@ The lab contains:
 
 Some Demo videos are uploaded on Youtube, please check the followings:
 1. Wall Following with self-assembly robot based on Rasberry Pi: 
-2. Lane Detection Result: 
+2. Lane Detection Result: https://www.youtube.com/watch?v=0OnX-8cG3FY 
 3. Gazebo Simulation for Jackal UGV passing through two pillars: 
