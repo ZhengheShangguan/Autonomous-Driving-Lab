@@ -1,4 +1,4 @@
-# MSP432Serial
+# Autonomous Driving Vehicle - Labs
 Author: Zhenghe Shangguan
 
 This repo includes some necessary parts in Autonomous Driving. All the Lab codes with "to do" comments are written by me.
@@ -11,6 +11,6 @@ The lab contains:
 6. Rviz and Gazebo simulation with task: Let Jackal UGV robot localize itself and pass throught two pillars.
 
 Some Demo videos are uploaded on Youtube, please check the followings:
-1. Wall Following with self-assembly robot based on Rasberry Pi: 
+1. Wall Following with self-assembly robot based on Rasberry Pi: https://www.youtube.com/watch?v=wUAMtk0bIXM 
 2. Lane Detection Result: https://www.youtube.com/watch?v=0OnX-8cG3FY 
 3. Gazebo Simulation for Jackal UGV passing through two pillars: 
